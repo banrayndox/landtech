@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.DS_Store
+
+# Databases & local logs
+*.db
+*.db-journal
+*.log
+
+# Outputs (keep directory, ignore heavy binaries)
+outputs/processed/*
+outputs/crops/*
+!outputs/processed/.gitkeep
+!outputs/crops/.gitkeep
+
+# Environment variables
+.env
