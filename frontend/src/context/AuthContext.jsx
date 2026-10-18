@@ -54,6 +54,10 @@ export const AuthProvider = ({ children }) => {
       remember_me: rememberMe,
     });
 
+    if (!res || !res.access_token || !res.user) {
+      throw new Error('সার্ভার থেকে সঠিক ইউজার ডেটা পাওয়া যায়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।');
+    }
+
     const accessToken = res.access_token;
     const userData = res.user;
 
