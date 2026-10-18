@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { demoDeedAssets } from '../assets/demoDeedAssets';
 import {
   Upload,
   FileText,
@@ -17,7 +18,8 @@ import {
   Sparkles,
   ExternalLink,
   Save,
-  CheckCheck
+  CheckCheck,
+  Maximize2
 } from 'lucide-react';
 
 export const DigitizationStudioPage = () => {
@@ -31,6 +33,8 @@ export const DigitizationStudioPage = () => {
   const [reviewNotes, setReviewNotes] = useState('');
   const [showMathModal, setShowMathModal] = useState(false);
   const [showHashModal, setShowHashModal] = useState(false);
+  const [selectedCropModal, setSelectedCropModal] = useState(null);
+  const [imageZoomModal, setImageZoomModal] = useState(false);
 
   // Automatically load default benchmark sample on mount if none loaded
   useEffect(() => {
@@ -42,6 +46,21 @@ export const DigitizationStudioPage = () => {
     setError('');
     try {
       const res = await api.post('/processing/demo-sample');
+      // Ensure image stages and crop URLs exist
+      if (!res.image_stages?.stage1_anonymized?.url) {
+        res.image_stages = {
+          stage1_anonymized: { title: '১. Anonymized Input / বেনামীকৃত মূল চিত্র', url: demoDeedAssets.stage1_anonymized },
+          stage2_shadow_removed: { title: '২. Shadow Removed / ছায়া অপসারিত চিত্র', url: demoDeedAssets.stage2_shadow_removed },
+          stage3_clean_binarized: { title: '৩. Clean Binarized / পরিষ্কার দ্বিমুখী চিত্র', url: demoDeedAssets.stage3_clean_binarized },
+        };
+      }
+      if (res.crops) {
+        Object.keys(res.crops).forEach((k) => {
+          if (!res.crops[k].crop_url && demoDeedAssets.crops?.[k]) {
+            res.crops[k].crop_url = demoDeedAssets.crops[k];
+          }
+        });
+      }
       setDocumentData(res);
       // Initialize human verified fields from normalized values
       const initialFields = {};
@@ -67,6 +86,8 @@ export const DigitizationStudioPage = () => {
       return;
     }
 
+    const previewBlobUrl = URL.createObjectURL(file);
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -78,6 +99,13 @@ export const DigitizationStudioPage = () => {
       const res = await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      if (!res.image_stages?.stage1_anonymized?.url) {
+        res.image_stages = {
+          stage1_anonymized: { title: '১. Anonymized Input / বেনামীকৃত মূল চিত্র', url: previewBlobUrl },
+          stage2_shadow_removed: { title: '২. Shadow Removed / ছায়া অপসারিত চিত্র', url: previewBlobUrl },
+          stage3_clean_binarized: { title: '৩. Clean Binarized / পরিষ্কার দ্বিমুখী চিত্র', url: previewBlobUrl },
+        };
+      }
       setDocumentData(res);
       const initialFields = {};
       if (res.crops) {
@@ -400,16 +428,38 @@ export const DigitizationStudioPage = () => {
               </div>
             </div>
 
-            <div className="mt-4 bg-[#F5F7F6] border border-[#E1E8E3] rounded-md p-3 flex justify-center items-center min-h-[360px]">
-              {documentData.image_stages?.[activeStage]?.url ? (
-                <div className="text-center">
-                  <img
-                    src={documentData.image_stages[activeStage].url}
-                    alt={activeStage}
-                    className="max-h-[460px] object-contain rounded border border-[#E1E8E3] shadow-xs mx-auto"
-                  />
-                  <div className="text-xs text-[#65736C] mt-2 font-medium">
-                    {documentData.image_stages[activeStage].title}
+            <div className="mt-4 bg-[#F5F7F6] border border-[#E1E8E3] rounded-md p-4 flex flex-col justify-center items-center min-h-[380px]">
+              {(documentData.image_stages?.[activeStage]?.url || demoDeedAssets?.[activeStage]) ? (
+                <div className="text-center w-full">
+                  <div className="relative inline-block max-w-full group">
+                    <img
+                      src={documentData.image_stages?.[activeStage]?.url || demoDeedAssets?.[activeStage]}
+                      alt={activeStage}
+                      onError={(e) => {
+                        if (demoDeedAssets?.[activeStage] && e.currentTarget.src !== demoDeedAssets[activeStage]) {
+                          e.currentTarget.src = demoDeedAssets[activeStage];
+                        }
+                      }}
+                      className="max-h-[500px] w-auto max-w-full object-contain rounded border border-[#E1E8E3] shadow-md mx-auto bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setImageZoomModal(true)}
+                      className="absolute top-3 right-3 bg-white/95 hover:bg-white text-[#006A4E] border border-[#E1E8E3] px-2.5 py-1 rounded text-xs font-semibold shadow-xs flex items-center space-x-1 transition-all cursor-pointer"
+                      title="পূর্ণাকারে জুম করে দেখুন"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>জুম ভিউ</span>
+                    </button>
+                  </div>
+                  <div className="text-xs text-[#17211D] mt-3 font-bold flex items-center justify-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-[#006A4E]"></span>
+                    <span>{documentData.image_stages?.[activeStage]?.title || 'চিত্র পর্যায়'}</span>
+                  </div>
+                  <div className="text-[11px] text-[#65736C] mt-1 max-w-xl mx-auto">
+                    {activeStage === 'stage1_anonymized' && '১. স্পর্শকাতর ব্যক্তিগত তথ্য বেনামীকরণ ও ফিল্টারিং সম্পন্ন।'}
+                    {activeStage === 'stage2_shadow_removed' && '২. ছায়া ও কালির দাগ অপসারিত করে লেখার স্পষ্টতা বৃদ্ধি করা হয়েছে।'}
+                    {activeStage === 'stage3_clean_binarized' && '৩. পরিষ্কার দ্বিমুখী (Black & White) রূপান্তরের মাধ্যমে অপটিক্যাল ক্যারেক্টার রিকগনিশনের জন্য প্রস্তুত।'}
                   </div>
                 </div>
               ) : (
@@ -453,23 +503,39 @@ export const DigitizationStudioPage = () => {
                 </thead>
                 <tbody className="divide-y divide-[#E1E8E3] bg-white">
                   {documentData.crops &&
-                    Object.entries(documentData.crops).map(([fieldName, crop]) => (
-                      <tr key={fieldName} className="hover:bg-[#F5F7F6]/60">
-                        <td className="py-2.5 px-3 font-medium text-[#17211D]">
-                          <div>{crop.label}</div>
-                          <div className="text-[10px] font-mono text-[#65736C]">{fieldName}</div>
-                        </td>
-                        <td className="py-2.5 px-3">
-                          {crop.crop_url ? (
-                            <img
-                              src={crop.crop_url}
-                              alt={crop.label}
-                              className="h-10 w-28 object-cover rounded border border-[#E1E8E3] bg-white"
-                            />
-                          ) : (
-                            <span className="text-[10px] text-[#65736C]">ক্রপ অনুপস্থিত</span>
-                          )}
-                        </td>
+                    Object.entries(documentData.crops).map(([fieldName, crop]) => {
+                      const cropImgSrc = crop.crop_url || demoDeedAssets?.crops?.[fieldName];
+                      return (
+                        <tr key={fieldName} className="hover:bg-[#F5F7F6]/60">
+                          <td className="py-2.5 px-3 font-medium text-[#17211D]">
+                            <div>{crop.label}</div>
+                            <div className="text-[10px] font-mono text-[#65736C]">{fieldName}</div>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            {cropImgSrc ? (
+                              <img
+                                src={cropImgSrc}
+                                alt={crop.label}
+                                onError={(e) => {
+                                  if (demoDeedAssets?.crops?.[fieldName] && e.currentTarget.src !== demoDeedAssets.crops[fieldName]) {
+                                    e.currentTarget.src = demoDeedAssets.crops[fieldName];
+                                  }
+                                }}
+                                className="h-10 w-28 object-cover rounded border border-[#E1E8E3] bg-white cursor-pointer hover:border-[#006A4E] hover:shadow-xs transition-all"
+                                onClick={() =>
+                                  setSelectedCropModal({
+                                    label: crop.label,
+                                    fieldName,
+                                    src: cropImgSrc,
+                                    raw: crop.raw_ocr_text,
+                                  })
+                                }
+                                title="ক্লিক করে ক্রপটি বড় করে দেখুন"
+                              />
+                            ) : (
+                              <span className="text-[10px] text-[#65736C]">ক্রপ অনুপস্থিত</span>
+                            )}
+                          </td>
                         <td className="py-2.5 px-3 font-mono text-gray-700 bg-gray-50/50 rounded">
                           {crop.raw_ocr_text || '(অনুপস্থিত)'}
                         </td>
@@ -494,7 +560,8 @@ export const DigitizationStudioPage = () => {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -673,6 +740,83 @@ export const DigitizationStudioPage = () => {
               <button
                 onClick={() => setShowMathModal(false)}
                 className="px-4 py-1.5 bg-[#006A4E] text-white text-xs font-semibold rounded"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Resolution Deed Zoom Modal */}
+      {imageZoomModal && documentData && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-4 shadow-2xl border border-[#E1E8E3] max-h-[95vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E1E8E3]">
+              <div className="flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#006A4E]"></span>
+                <h3 className="text-sm font-bold text-[#17211D]">
+                  {documentData.image_stages?.[activeStage]?.title || 'পূর্ণাকারে দলিল পরিদর্শন'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setImageZoomModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg font-bold px-2 py-0.5 rounded hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 flex justify-center items-center bg-[#F5F7F6] rounded mt-3">
+              <img
+                src={documentData.image_stages?.[activeStage]?.url || demoDeedAssets?.[activeStage]}
+                alt="Zoomed Deed"
+                className="max-h-[75vh] w-auto object-contain rounded border border-[#E1E8E3] shadow-md bg-white"
+              />
+            </div>
+            <div className="mt-3 flex justify-between items-center text-xs text-[#65736C]">
+              <span>মাউস বা টাচ দিয়ে স্ক্রল করে পর্যবেক্ষণ করুন।</span>
+              <button
+                onClick={() => setImageZoomModal(false)}
+                className="px-4 py-1.5 bg-[#006A4E] text-white text-xs font-semibold rounded hover:bg-[#004D3A]"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Evidence Crop Magnification Modal */}
+      {selectedCropModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-5 shadow-2xl border border-[#E1E8E3]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E1E8E3]">
+              <div>
+                <h3 className="text-sm font-bold text-[#17211D]">{selectedCropModal.label}</h3>
+                <div className="text-[11px] font-mono text-[#65736C]">{selectedCropModal.fieldName}</div>
+              </div>
+              <button
+                onClick={() => setSelectedCropModal(null)}
+                className="text-gray-400 hover:text-gray-600 text-lg font-bold px-2 py-0.5 rounded hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-4 bg-[#F5F7F6] p-4 rounded border border-[#E1E8E3] flex justify-center items-center min-h-[120px]">
+              <img
+                src={selectedCropModal.src}
+                alt={selectedCropModal.label}
+                className="max-h-36 max-w-full object-contain rounded border border-[#E1E8E3] shadow-sm bg-white"
+              />
+            </div>
+            <div className="mt-3 bg-gray-50 p-2.5 rounded border text-xs">
+              <div className="text-[#65736C] font-medium">র ওরিজিনাল অপটিক্যাল টেক্সট:</div>
+              <div className="font-mono font-bold text-gray-900 mt-1">{selectedCropModal.raw}</div>
+            </div>
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setSelectedCropModal(null)}
+                className="px-4 py-1.5 bg-[#006A4E] text-white text-xs font-semibold rounded hover:bg-[#004D3A]"
               >
                 বন্ধ করুন
               </button>

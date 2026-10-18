@@ -40,6 +40,8 @@ const DEMO_USERS = {
   },
 };
 
+import { demoDeedAssets } from '../assets/demoDeedAssets';
+
 // Benchmark Document State for DOLIL_2001_20078
 let currentDocState = {
   doc_id: 'DOLIL_2001_20078',
@@ -53,15 +55,15 @@ let currentDocState = {
   image_stages: {
     stage1_anonymized: {
       title: '১. Anonymized Input / বেনামীকৃত মূল চিত্র',
-      url: '/assets/hero.png',
+      url: demoDeedAssets.stage1_anonymized,
     },
     stage2_shadow_removed: {
       title: '২. Shadow Removed / ছায়া অপসারিত চিত্র',
-      url: '/assets/hero.png',
+      url: demoDeedAssets.stage2_shadow_removed,
     },
     stage3_clean_binarized: {
       title: '৩. Clean Binarized / পরিষ্কার দ্বিমুখী চিত্র',
-      url: '/assets/hero.png',
+      url: demoDeedAssets.stage3_clean_binarized,
     },
   },
   seal_status: {
@@ -84,7 +86,7 @@ let currentDocState = {
       normalized_value: 'ন ৪১৪০২৩১',
       confidence: 0.95,
       provenance: 'DEMO_SYNTHETIC_DATA',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.stamp_serial_no,
     },
     stamp_duty_math: {
       field_name: 'stamp_duty_math',
@@ -93,7 +95,7 @@ let currentDocState = {
       normalized_value: '১০০+১০০+১০০+১০০+৫০=৪৫০',
       confidence: 0.98,
       provenance: 'DEMO_SYNTHETIC_DATA',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.stamp_duty_math,
     },
     copy_issue_date: {
       field_name: 'copy_issue_date',
@@ -102,7 +104,7 @@ let currentDocState = {
       normalized_value: '১১/০৩/২০১০',
       confidence: 0.94,
       provenance: 'DEMO_SYNTHETIC_DATA',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.copy_issue_date,
     },
     deed_number_year: {
       field_name: 'deed_number_year',
@@ -111,7 +113,7 @@ let currentDocState = {
       normalized_value: '২০০৭৮/২০০১',
       confidence: 0.96,
       provenance: 'DEMO_SYNTHETIC_DATA',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.deed_number_year,
     },
     deed_type_and_value: {
       field_name: 'deed_type_and_value',
@@ -120,7 +122,7 @@ let currentDocState = {
       normalized_value: 'বেল এওয়াজে হেবা দলিল ৪,০০০ টাকা',
       confidence: 0.95,
       provenance: 'LEXICON_NORMALIZED',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.deed_type_and_value,
     },
     land_area: {
       field_name: 'land_area',
@@ -129,7 +131,7 @@ let currentDocState = {
       normalized_value: '৩০ শতাংশ',
       confidence: 0.94,
       provenance: 'DEMO_SYNTHETIC_DATA',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.land_area,
     },
     location_mouza_thana: {
       field_name: 'location_mouza_thana',
@@ -138,7 +140,7 @@ let currentDocState = {
       normalized_value: 'মৌজা: বারেন্ডা, থানা: গাজীপুর সদর',
       confidence: 0.96,
       provenance: 'LEXICON_NORMALIZED',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.location_mouza_thana,
     },
     registration_date: {
       field_name: 'registration_date',
@@ -147,7 +149,7 @@ let currentDocState = {
       normalized_value: '২৮/১০/২০০১',
       confidence: 0.95,
       provenance: 'DEMO_SYNTHETIC_DATA',
-      crop_url: '',
+      crop_url: demoDeedAssets.crops.registration_date,
     },
   },
   validation_flags: {
