@@ -42,8 +42,8 @@ const DEMO_USERS = {
 
 import { demoDeedAssets } from '../assets/demoDeedAssets';
 
-// Benchmark Document State for DOLIL_2001_20078
-let currentDocState = {
+// Benchmark Document State Factory for DOLIL_2001_20078
+export const createBenchmarkDeed = () => ({
   doc_id: 'DOLIL_2001_20078',
   document_type: 'STAMP_DEED_DOLIL',
   classification: 'STAMP_DEED_DOLIL',
@@ -180,6 +180,12 @@ let currentDocState = {
   audit_hash: '8f4c3a2b1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b',
   legal_disclaimer:
     'NON-GOAL COMPLIANCE: Digitized record for search/indexing only. Does NOT establish legal title.',
+});
+
+let currentDocState = createBenchmarkDeed();
+
+export const setCurrentDocState = (doc) => {
+  currentDocState = doc;
 };
 
 // Plot Quota State for GZ-SDR-JL14-KH402-DAG105
@@ -234,10 +240,11 @@ export const handleMockRequest = async (url, method, data) => {
 
   // 4. Processing: Demo sample
   if (cleanUrl.includes('/processing/demo-sample')) {
+    currentDocState = createBenchmarkDeed();
     return currentDocState;
   }
 
-  // 5. Document Details
+  // 5. Document Details & Uploads
   if (cleanUrl.startsWith('/documents/')) {
     return currentDocState;
   }

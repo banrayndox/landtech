@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { demoDeedAssets } from '../assets/demoDeedAssets';
+import { processUploadedDeedClient } from '../services/clientVisionPipeline';
+import { setCurrentDocState } from '../services/mockService';
 import {
   Upload,
   FileText,
@@ -86,39 +88,48 @@ export const DigitizationStudioPage = () => {
       return;
     }
 
-    const previewBlobUrl = URL.createObjectURL(file);
-
-    const formData = new FormData();
-    formData.append('file', file);
-
     setLoading(true);
     setError('');
     setSuccessMsg('');
 
     try {
-      const res = await api.post('/documents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (!res.image_stages?.stage1_anonymized?.url) {
-        res.image_stages = {
-          stage1_anonymized: { title: '১. Anonymized Input / বেনামীকৃত মূল চিত্র', url: previewBlobUrl },
-          stage2_shadow_removed: { title: '২. Shadow Removed / ছায়া অপসারিত চিত্র', url: previewBlobUrl },
-          stage3_clean_binarized: { title: '৩. Clean Binarized / পরিষ্কার দ্বিমুখী চিত্র', url: previewBlobUrl },
-        };
+      // 1. Process the user's actual uploaded image with client vision pipeline
+      const clientProcessedDoc = await processUploadedDeedClient(file);
+
+      let finalDoc = clientProcessedDoc;
+
+      // 2. If real Python backend is running, attempt backend ingestion as well
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await api.post('/documents/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        // Only use backend response if it's a real custom processing result (not demo deed)
+        if (res && res.doc_id && res.doc_id !== 'DOLIL_2001_20078') {
+          finalDoc = res;
+        }
+      } catch (backendErr) {
+        // Backend not available (Vercel cloud or offline); use clientProcessedDoc
       }
-      setDocumentData(res);
+
+      setDocumentData(finalDoc);
+      setCurrentDocState(finalDoc);
+      setActiveStage('stage1_anonymized');
+
       const initialFields = {};
-      if (res.crops) {
-        Object.keys(res.crops).forEach((k) => {
-          initialFields[k] = res.crops[k].normalized_value || res.crops[k].raw_ocr_text || '';
+      if (finalDoc.crops) {
+        Object.keys(finalDoc.crops).forEach((k) => {
+          initialFields[k] = finalDoc.crops[k].normalized_value || finalDoc.crops[k].raw_ocr_text || '';
         });
       }
       setEditableFields(initialFields);
-      setSuccessMsg('দলিল সফলভাবে আপলোড এবং ৭-স্তরীয় প্রক্রিয়াকরণ সম্পন্ন হয়েছে।');
+      setSuccessMsg(`আপনার নতুন দলিল (${finalDoc.doc_id}) সফলভাবে প্রক্রিয়াকৃত হয়েছে। ৩টি স্তর ও ৮টি ক্রপ দেখুন।`);
     } catch (err) {
       setError(err.message || 'দলিল প্রসেসিং ব্যর্থ হয়েছে।');
     } finally {
       setLoading(false);
+      e.target.value = '';
     }
   };
 
