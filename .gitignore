@@ -29,3 +29,5 @@ outputs/crops/*
 
 # Environment variables
 .env
+
+.vercel
